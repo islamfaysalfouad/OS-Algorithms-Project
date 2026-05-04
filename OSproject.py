@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 
 # ---------------- CPU SCHEDULING (FCFS) ----------------
 def cpu_scheduling_fcfs():
@@ -38,30 +39,83 @@ def cpu_scheduling_fcfs():
     except ValueError:
         print("Please enter valid numbers!")
 
-# ---------------- MEMORY ALLOCATION (First Fit) ----------------
-def memory_allocation_first_fit():
-    print("\n--- Memory Allocation: First Fit ---")
-    try:
-        blocks_input = input("Enter block sizes (space separated): ").split()
-        blocks = [int(x) for x in blocks_input]
-        procs_input = input("Enter process sizes (space separated): ").split()
-        procs = [int(x) for x in procs_input]
+def run_memory_algorithm(algo_name, block_sizes, process_sizes):
+    blocks = [[size, size, False] for size in block_sizes]
+    allocation = [-1] * len(process_sizes)
 
-        allocation = [-1] * len(procs)
-        
-        for i in range(len(procs)):
-            for j in range(len(blocks)):
-                if blocks[j] >= procs[i]:
-                    allocation[i] = j
-                    blocks[j] -= procs[i]
+    for i, p_size in enumerate(process_sizes):
+        best_idx = -1
+        for j in range(len(blocks)):
+            if not blocks[j][2] and blocks[j][0] >= p_size:
+                if algo_name == "First Fit":
+                    best_idx = j
                     break
+                elif algo_name == "Best Fit":
+                    if best_idx == -1 or blocks[j][0] < blocks[best_idx][0]:
+                        best_idx = j
+        if best_idx != -1:
+            allocation[i] = best_idx
+            blocks[best_idx][2] = True
+    
+    internal_frag = 0
+    for i, b_idx in enumerate(allocation):
+        if b_idx != -1:
+            internal_frag += (blocks[b_idx][1] - process_sizes[i])
+    external_frag = sum(b[1] for b in blocks if not b[2])
+    
+    return allocation, internal_frag, external_frag
+
+def plot_comparison(ff_data, bf_data):
+    labels = ['First Fit', 'Best Fit']
+    internal = [ff_data['int'], bf_data['int']]
+    external = [ff_data['ext'], bf_data['ext']]
+    x = [0, 1]
+    width = 0.35
+    plt.figure(figsize=(8, 5))
+    plt.bar(x, internal, width, label='Internal Fragmentation', color='skyblue')
+    plt.bar([i + width for i in x], external, width, label='External Fragmentation', color='salmon')
+    plt.ylabel('Memory Size (KB)')
+    plt.title('Fragmentation Comparison: First Fit vs Best Fit')
+    plt.xticks([i + width/2 for i in x], labels)
+    plt.legend()
+    plt.show()
+
+def memory_allocation():
+    print("\n--- MEMORY ALLOCATION (First Fit vs Best Fit) ---")
+    try:
+        b_input = input("Enter block sizes (space separated): ")
+        block_sizes = [int(x) for x in b_input.split()]
+        p_input = input("Enter process sizes (space separated): ")
+        process_sizes = [int(x) for x in p_input.split()]
+
+        ff_alloc, ff_int, ff_ext = run_memory_algorithm("First Fit", block_sizes, process_sizes)
+        bf_alloc, bf_int, bf_ext = run_memory_algorithm("Best Fit", block_sizes, process_sizes)
+
+        table_rows = []
+        for i in range(len(process_sizes)):
+            ff_res = f"Block {ff_alloc[i]+1}" if ff_alloc[i] != -1 else "Not Allocated"
+            bf_res = f"Block {bf_alloc[i]+1}" if bf_alloc[i] != -1 else "Not Allocated"
+            table_rows.append([f"P{i+1} ({process_sizes[i]}K)", ff_res, bf_res])
 
         print("\nAllocation Results:")
-        for i in range(len(procs)):
-            res = f"Block {allocation[i] + 1}" if allocation[i] != -1 else "Not Allocated"
-            print(f"Process {i+1} ({procs[i]}) -> {res}")
+        print(tabulate(table_rows, headers=["Process", "First Fit", "Best Fit"], tablefmt="fancy_grid"))
+
+        summary = [
+            ["Metric", "First Fit", "Best Fit"],
+            ["Internal Fragmentation", f"{ff_int}K", f"{bf_int}K"],
+            ["External Fragmentation", f"{ff_ext}K", f"{bf_ext}K"],
+            ["Total Waste", f"{ff_int + ff_ext}K", f"{bf_int + bf_ext}K"]
+        ]
+        print("\nPerformance Comparison:")
+        print(tabulate(summary, headers="firstrow", tablefmt="fancy_grid"))
+
+        plot_comparison({'int': ff_int, 'ext': ff_ext}, {'int': bf_int, 'ext': bf_ext})
+        
+        input("\nPress Enter to return to the Main Menu...")
+
     except ValueError:
-        print("Invalid input! Use numbers separated by spaces.")
+        print("Error: Please enter numbers separated by spaces.")
+    
 
 # ---------------- PAGE REPLACEMENT (FIFO) ----------------
 def page_replacement_fifo():
@@ -102,7 +156,7 @@ def main():
         if choice == '1':
             cpu_scheduling_fcfs()
         elif choice == '2':
-            memory_allocation_first_fit()
+            memory_allocation()
         elif choice == '3':
             page_replacement_fifo()
         elif choice == '4':
