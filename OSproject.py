@@ -39,6 +39,7 @@ def cpu_scheduling_fcfs():
     except ValueError:
         print("Please enter valid numbers!")
 
+# ---------------- MEMORY ALLOCATION -------------
 def run_memory_algorithm(algo_name, block_sizes, process_sizes):
     blocks = [[size, size, False] for size in block_sizes]
     allocation = [-1] * len(process_sizes)
@@ -71,7 +72,7 @@ def plot_comparison(ff_data, bf_data):
     external = [ff_data['ext'], bf_data['ext']]
     x = [0, 1]
     width = 0.35
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(7, 4))
     plt.bar(x, internal, width, label='Internal Fragmentation', color='skyblue')
     plt.bar([i + width for i in x], external, width, label='External Fragmentation', color='salmon')
     plt.ylabel('Memory Size (KB)')
@@ -81,7 +82,7 @@ def plot_comparison(ff_data, bf_data):
     plt.show()
 
 def memory_allocation():
-    print("\n--- MEMORY ALLOCATION (First Fit vs Best Fit) ---")
+    print("\n--- MEMORY ALLOCATION (First Fit vs Best Fit) ---\n")
     try:
         b_input = input("Enter block sizes (space separated): ")
         block_sizes = [int(x) for x in b_input.split()]
@@ -93,18 +94,31 @@ def memory_allocation():
 
         table_rows = []
         for i in range(len(process_sizes)):
-            ff_res = f"Block {ff_alloc[i]+1}" if ff_alloc[i] != -1 else "Not Allocated"
-            bf_res = f"Block {bf_alloc[i]+1}" if bf_alloc[i] != -1 else "Not Allocated"
-            table_rows.append([f"P{i+1} ({process_sizes[i]}K)", ff_res, bf_res])
+            # 1. First Fit result string
+            ff_idx = ff_alloc[i] 
+            if ff_idx != -1:
+                # Use the index to find the original size in the block_sizes list
+                ff_res = f"Block {ff_idx + 1} ({block_sizes[ff_idx]})"
+            else:
+                ff_res = "Not Allocated"
+
+            # 2. Best Fit result string
+            bf_idx = bf_alloc[i] 
+            if bf_idx != -1:
+                bf_res = f"Block {bf_idx + 1} ({block_sizes[bf_idx]})"
+            else:
+                bf_res = "Not Allocated"
+
+            table_rows.append([f"P{i+1} ({process_sizes[i]})", ff_res, bf_res])
 
         print("\nAllocation Results:")
         print(tabulate(table_rows, headers=["Process", "First Fit", "Best Fit"], tablefmt="fancy_grid"))
 
         summary = [
             ["Metric", "First Fit", "Best Fit"],
-            ["Internal Fragmentation", f"{ff_int}K", f"{bf_int}K"],
-            ["External Fragmentation", f"{ff_ext}K", f"{bf_ext}K"],
-            ["Total Waste", f"{ff_int + ff_ext}K", f"{bf_int + bf_ext}K"]
+            ["Internal Fragmentation", f"{ff_int}", f"{bf_int}"],
+            ["External Fragmentation", f"{ff_ext}", f"{bf_ext}"],
+            ["Total Waste", f"{ff_int + ff_ext}", f"{bf_int + bf_ext}"]
         ]
         print("\nPerformance Comparison:")
         print(tabulate(summary, headers="firstrow", tablefmt="fancy_grid"))
@@ -115,7 +129,6 @@ def memory_allocation():
 
     except ValueError:
         print("Error: Please enter numbers separated by spaces.")
-    
 
 # ---------------- PAGE REPLACEMENT (FIFO) ----------------
 def page_replacement_fifo():
