@@ -130,38 +130,79 @@ def memory_allocation():
     except ValueError:
         print("Error: Please enter numbers separated by spaces.")
 
-# ---------------- PAGE REPLACEMENT (FIFO) ----------------
-def page_replacement_fifo():
-    print("\n--- Page Replacement: FIFO ---")
+# ---------------- PAGE REPLACEMENT (FIFO vs LRU) ----------------
+def page_replacement():
+    print("\n--- Page Replacement: FIFO vs LRU ---")
     try:
         pages = [int(x) for x in input("Enter page reference string (space separated): ").split()]
         capacity = int(input("Enter number of frames: "))
         
-        frames = []
-        page_faults = 0
-        print("\nStep-by-step Frame Status:")
+        # --- FIFO Implementation ---
+        print("\n--- FIFO Execution Step-by-Step ---")
+        frames_fifo = []
+        faults_fifo = 0
         for page in pages:
-            if page not in frames:
-                if len(frames) < capacity:
-                    frames.append(page)
+            if page not in frames_fifo:
+                if len(frames_fifo) < capacity:
+                    frames_fifo.append(page)
                 else:
-                    frames.pop(0)
-                    frames.append(page)
-                page_faults += 1
-                print(f"Page {page}: {frames} (Fault)")
+                    frames_fifo.pop(0)
+                    frames_fifo.append(page)
+                faults_fifo += 1
+                print(f"Page {page}: {frames_fifo} (Fault)")
             else:
-                print(f"Page {page}: {frames} (Hit)")
-        print(f"\nTotal Page Faults: {page_faults}")
+                print(f"Page {page}: {frames_fifo} (Hit)")
+        
+        # --- LRU Implementation ---
+        print("\n--- LRU Execution Step-by-Step ---")
+        frames_lru = []
+        faults_lru = 0
+        for page in pages:
+            if page not in frames_lru:
+                if len(frames_lru) < capacity:
+                    frames_lru.append(page)
+                else:
+                    frames_lru.pop(0)  # Removes the least recently used element
+                    frames_lru.append(page)
+                faults_lru += 1
+                print(f"Page {page}: {frames_lru} (Fault)")
+            else:
+                # If hit, remove it from its current position and append it to the end (Most Recently Used)
+                frames_lru.remove(page)
+                frames_lru.append(page)
+                print(f"Page {page}: {frames_lru} (Hit)")
+
+        # --- Comparison & Analysis ---
+        print("\n--- Performance Comparison ---")
+        summary = [
+            ["Algorithm", "Total Page Faults"],
+            ["FIFO", f"{faults_fifo}"],
+            ["LRU", f"{faults_lru}"]
+        ]
+        print(tabulate(summary, headers="firstrow", tablefmt="fancy_grid"))
+
+        # Plotting the results
+        labels = ['FIFO', 'LRU']
+        faults = [faults_fifo, faults_lru]
+        
+        plt.figure(figsize=(6, 4))
+        plt.bar(labels, faults, color=['skyblue', 'salmon'], width=0.4)
+        plt.ylabel('Number of Page Faults')
+        plt.title('Page Fault Comparison: FIFO vs LRU')
+        plt.show()
+
+        input("\nPress Enter to return to the Main Menu...")
+
     except ValueError:
-        print("Invalid input!")
+        print("Invalid input! Please enter numbers separated by spaces.")
 
 # ---------------- MAIN MENU ----------------
 def main():
     while True:
         print("\n================ OS PROJECT MENU ================")
         print("1. CPU Scheduling (FCFS)")
-        print("2. Memory Allocation (First Fit)")
-        print("3. Page Replacement (FIFO)")
+        print("2. Memory Allocation (First Fit vs Best Fit)")
+        print("3. Page Replacement (FIFO vs LRU)")
         print("4. Exit")
         
         choice = input("Select a task (1-4): ")
@@ -171,7 +212,7 @@ def main():
         elif choice == '2':
             memory_allocation()
         elif choice == '3':
-            page_replacement_fifo()
+            page_replacement()
         elif choice == '4':
             print("Exiting... Good luck with your project!")
             break
