@@ -47,7 +47,7 @@ def run_memory_algorithm(algo_name, block_sizes, process_sizes):
     for i, p_size in enumerate(process_sizes):
         best_idx = -1
         for j in range(len(blocks)):
-            if not blocks[j][2] and blocks[j][0] >= p_size:
+            if blocks[j][0] >= p_size:
                 if algo_name == "First Fit":
                     best_idx = j
                     break
@@ -56,14 +56,18 @@ def run_memory_algorithm(algo_name, block_sizes, process_sizes):
                         best_idx = j
         if best_idx != -1:
             allocation[i] = best_idx
+            blocks[best_idx][0] -= p_size
             blocks[best_idx][2] = True
             print(f"Step: Process P{i+1} allocated to Block {best_idx+1}")
     
     internal_frag = 0
-    for i, b_idx in enumerate(allocation):
-        if b_idx != -1:
-            internal_frag += (blocks[b_idx][1] - process_sizes[i])
-    external_frag = sum(b[1] for b in blocks if not b[2])
+    external_frag = 0
+    
+    for b in blocks:
+        if b[2]: 
+            internal_frag += b[0] 
+        else:
+            external_frag += b[0] 
     
     return allocation, internal_frag, external_frag
 
